@@ -5,6 +5,7 @@ PRN = 0b01000111
 HLT = 0b00000001
 LDI = 0b10000010
 MUL = 0b10100010
+
 class CPU:
     """Main CPU class."""
 
@@ -18,31 +19,12 @@ class CPU:
     def ram_read(self, value):
         return self.ram[value]
 
-
     def ram_write(self,value,new):
         self.ram[value] = new
 
     def load(self):
         """Load a program into memory."""
-
         address = 0
-
-        # For now, we've just hardcoded a program:
-
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010, # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111, # PRN R0
-        #     0b00000000,
-        #     0b00000001, # HLT
-        # ]
-
-        # for instruction in program:
-        #     self.ram[address] = instruction
-        #     address += 1
-
         if len(sys.argv) != 2:
             print("usage: comp.py progname")
             sys.exit(1)
@@ -71,8 +53,12 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
-
+        elif op == "SUB": 
+            self.reg[reg_a] -= self.reg[reg_b]
+        elif op == "MUL": 
+            self.reg[reg_a] *= self.reg[reg_b]
+        elif op == "DIV": 
+            self.reg[reg_a] /= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -101,14 +87,16 @@ class CPU:
         HLT = 0b00000001
         LDI = 0b10000010
         PRN = 0b01000111
-
+        PUSH = 0b01000101
+        POP = 0b01000110
+      
         running = True
 
         while running == True:
             instruction = self.ram_read(self.PC)
             first_opperator = self.ram_read(self.PC + 1)
             second_opperator = self.ram_read(self.PC + 2)
-            print(self.ram_read(self.PC))
+
             if instruction == HLT:
                 running = False
                 self.PC = self.PC + 1
@@ -118,20 +106,31 @@ class CPU:
                 self.PC = self.PC + 3 
 
             elif instruction == PRN:#prints first opperator 8
-                # print(self.reg[first_opperator])
+                print(self.reg[first_opperator])
                 self.PC = self.PC + 2
 
             elif instruction == MUL:# 8 * 9
-                self.reg[first_opperator] = self.reg[first_opperator] * self.reg[second_opperator]
+                self.alu("MUL", first_opperator, second_opperator)
                 self.PC = self.PC + 3
+
+            elif instruction == PUSH:
+                self.reg[7] -= 1
+                sp = self.reg[7]
+
+                value = self.reg[first_opperator]
+                self.ram[sp] = value
+
+                self.PC += 2
+
+            elif instruction == POP:
+                sp = self.reg[7]
+
+                value = self.ram[sp]
+                self.reg[first_opperator] = value
+
+                self.reg[7] += 1                
+                self.PC += 2
+
             else:
                 print(f" input {instruction}")
                 running = False
-
-# * `LDI`: load "immediate", store a value in a register, or "set this register to
-#   this value".
-
-# * `PRN`: a pseudo-instruction that prints the numeric value stored in a
-#   register.
-
-# * `HLT`: halt the CPU and exit the emulator.
