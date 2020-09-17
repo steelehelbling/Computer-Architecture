@@ -1,10 +1,8 @@
 """CPU functionality."""
 
 import sys
-PRN = 0b01000111
-HLT = 0b00000001
-LDI = 0b10000010
-MUL = 0b10100010
+
+
 
 class CPU:
     """Main CPU class."""
@@ -87,13 +85,18 @@ class CPU:
         HLT = 0b00000001
         LDI = 0b10000010
         PRN = 0b01000111
+        MUL = 0b10100010
         PUSH = 0b01000101
         POP = 0b01000110
-      
+        CALL = 0b01010000
+        RET = 0b00010001
+        ADD  = 0b10100000
+        SP = 7
+
         running = True
 
         while running == True:
-            instruction = self.ram_read(self.PC)
+            instruction = self.ram[self.PC]
             first_opperator = self.ram_read(self.PC + 1)
             second_opperator = self.ram_read(self.PC + 2)
 
@@ -114,22 +117,35 @@ class CPU:
                 self.PC = self.PC + 3
 
             elif instruction == PUSH:
-                self.reg[7] -= 1
-                sp = self.reg[7]
-
+                self.reg[SP] -= 1
+                reg_num = self.reg[SP]
                 value = self.reg[first_opperator]
-                self.ram[sp] = value
+                self.ram[reg_num] = value
 
                 self.PC += 2
 
             elif instruction == POP:
-                sp = self.reg[7]
-
-                value = self.ram[sp]
+                
+                reg_num = self.reg[SP]
+                value = self.ram[reg_num]
                 self.reg[first_opperator] = value
-
-                self.reg[7] += 1                
+                self.reg[SP] += 1                
                 self.PC += 2
+
+            elif instruction == ADD:
+                self.alu("ADD", first_opperator, second_opperator)
+                self.PC += 3
+
+            elif instruction == CALL:
+                self.reg[SP] -=1
+                reg_num = self.reg[SP]
+                self.ram[reg_num] = self.PC + 2
+                self.PC = self.reg[first_opperator]
+
+            elif instruction == RET:
+                reg_num = self.reg[SP]
+                self.PC = self.ram[reg_num]
+                self.reg[SP] += 1
 
             else:
                 print(f" input {instruction}")
